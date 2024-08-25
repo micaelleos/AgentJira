@@ -1,6 +1,5 @@
 init:
 	git init
-	python -m venv myenv
 	echo myenv > .gitignore
 activate:
 	myenv\Scripts\activate
