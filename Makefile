@@ -1,8 +1,8 @@
 init:
 	git init
-	echo myenv > .gitignore
+	echo agentenv > .gitignore
 activate:
-	myenv\Scripts\activate
+	agentenv\Scripts\activate
 install:
 	pip install -r requirements.txt
 login:
