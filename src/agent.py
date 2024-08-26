@@ -15,7 +15,7 @@ from src.tool import generate_tools_for_user
 #from tool import generate_tools_for_user
 
 class AgentJira:
-    def __init__(self,sessionId:str,url:str,user_name:str,password:str) -> None:
+    def __init__(self,sessionId:str,url:str=None,user_name:str=None,password:str=None) -> None:
         self.sessionId = sessionId
         self.OPENAI_API_KEY = os.environ['OPEN_API_KEY']
         self.model = ChatOpenAI(openai_api_key=self.OPENAI_API_KEY,temperature=0.5)

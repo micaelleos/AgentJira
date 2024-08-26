@@ -16,10 +16,10 @@ def get_all_keys():
         response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
         data.extend(response['Items'])
         
-        for item in data:
-            keys.append({
-            partition_key_name: item[partition_key_name]
-            })
+    for item in data:
+        keys.append({
+        partition_key_name: item[partition_key_name]
+        })
 
     return keys
 

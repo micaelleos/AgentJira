@@ -48,7 +48,7 @@ async def chat(chat_session: str, prompt: Annotated[Payload, Body(embed=True)]):
 
 @app.get('/session/{chat_session}/history')
 def chat_history(chat_session:str):
-   history = ""
+   history = AgentJira(sessionId=chat_session).message_history.messages
    return {'chat_session':chat_session,"history":history}
 
 @app.get('/session/list')
