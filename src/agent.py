@@ -12,13 +12,14 @@ from langchain.schema.runnable import RunnablePassthrough
 from langchain.memory.chat_message_histories import DynamoDBChatMessageHistory
 
 from src.tool import generate_tools_for_user
+#from tool import generate_tools_for_user
 
 class AgentJira:
-    def __init__(self,sessionId) -> None:
+    def __init__(self,sessionId:str,url:str,user_name:str,password:str) -> None:
         self.sessionId = sessionId
         self.OPENAI_API_KEY = os.environ['OPEN_API_KEY']
         self.model = ChatOpenAI(openai_api_key=self.OPENAI_API_KEY,temperature=0.5)
-        self.criar_issue_Jira = generate_tools_for_user(sessionId)
+        self.criar_issue_Jira = generate_tools_for_user(url,user_name,password)
         self.model_jira_with_tool = self.model.bind(functions=[format_tool_to_openai_function(self.criar_issue_Jira)])
 
         self.prompt = ChatPromptTemplate.from_messages([
@@ -50,3 +51,13 @@ class AgentJira:
     def chat_agent(self,query):    
         response=self.agent_executor.invoke({'input':query})
         return response
+    
+if __name__=="__main__":
+    sessionId = "5" 
+    JIRA_INSTANCE_URL = "https://micaelleosouza.atlassian.net/"
+    USER_NAME ='micaelle.oliveira10@hotmail.com'
+    PASSWORD ='ATATT3xFfGF05BbX6A-oX4NTTUhQ5Zo0ZUhk5YfNBdJibEDdSFsOEP9uKLZ3r9LReJLtjqsaLOeeJ46sRLDMAfAPFrE0YwLYReeznj0WdUEYfFtvZA5O6FNfoWibqQomzZQECbEQKuVZZ9qCfaLVJ3NH6i0jr29TeQ7ntA-Tx411wNz6WNfIj4o=02F8FBA7'
+
+    agent = AgentJira(sessionId,JIRA_INSTANCE_URL,USER_NAME,PASSWORD)
+    print(agent.chat_agent("olá! Como você pode me ajudar?"))
+  

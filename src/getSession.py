@@ -8,6 +8,7 @@ table = dynamodb.Table('JiraSessionTable')
 partition_key_name = 'SessionId'  # Substitua pelo nome da sua chave de partição
 
 def get_all_keys():
+    keys=[]
     response = table.scan()
     data = response['Items']
 
@@ -15,7 +16,12 @@ def get_all_keys():
         response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
         data.extend(response['Items'])
         
-    return data
+        for item in data:
+            keys.append({
+            partition_key_name: item[partition_key_name]
+            })
+
+    return keys
 
 if __name__=="__main__":
     print(get_all_keys())

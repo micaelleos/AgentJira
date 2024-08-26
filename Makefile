@@ -17,5 +17,5 @@ push:
 aws: login docker tag push
 
 run: 
-	myenv\Scripts\activate
+	agentenv\Scripts\activate
 	python api.py
