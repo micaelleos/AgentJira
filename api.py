@@ -8,6 +8,7 @@ import uvicorn
 
 from src.agent import AgentJira
 from src.getSession import get_all_keys
+from user_util import val_user_session
 
 
 description = """
@@ -35,24 +36,37 @@ class Payload(BaseModel):
     user_name: str = Field(default=None,title="user name")
     password: str =Field(default=None,title="password")
 
-@app.post("/session/{chat_session}")
-async def chat(chat_session: str, prompt: Annotated[Payload, Body(embed=True)]):
-    chat = AgentJira(sessionId=chat_session, url=prompt.jira_url, user_name=prompt.user_name, password=prompt.password)
-    try:
-        response = chat.chat_agent(query=prompt.user_message)
-    except:
-       return {"Ai_response": "", "ChatId":"","status":"errror"}
-    
-    results = {"Ai_response": response["output"], "status":"sucsses"}
-    return results
+@app.post("user/{user}/session/{chat_session}")
+async def chat(userId:str,chat_session: str, prompt: Annotated[Payload, Body(embed=True)]):
+    if val_user_session(userId,chat_session):
+        chat = AgentJira(sessionId=chat_session, url=prompt.jira_url, user_name=prompt.user_name, password=prompt.password)
+        try:
+            response = chat.chat_agent(query=prompt.user_message)
+            return {"Ai_response": response["output"], "status":"sucsses"}
+        except:
+            return {"Ai_response":"", "ChatId":"","status":"errror"}
+    else:
+       return {"status":"error","message":"User dont't have this session"}    
+   
 
-@app.get('/session/{chat_session}/history')
+@app.get('user/{user}/session/{chat_session}/history')
 def chat_history(chat_session:str):
    history = AgentJira(sessionId=chat_session).message_history.messages
    return {'chat_session':chat_session,"history":history}
 
 @app.get('/session/list')
 def chat_list():
+   list = get_all_keys()
+   return {'Session_ids':list}
+
+
+@app.get('/user/list')
+def user_list():
+   list = get_all_keys()
+   return {'Session_ids':list}
+
+@app.get('/user/session/list')
+def user_session_list():
    list = get_all_keys()
    return {'Session_ids':list}
 
