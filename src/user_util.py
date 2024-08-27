@@ -24,7 +24,7 @@ def put_user_session(userId,session):
         'Nome': user_data["Nome"],     # Outro atributo do item
         'Email': user_data["Email"],
         'Url':user_data["Url"],
-        'password':user_data["password"],
+        'password':user_data["Password"],
         'Sessions':session_list
     }
 
@@ -61,6 +61,9 @@ def user_config(user_name:str,url:str=None,email:str=None,password:str=None):
         return item
     except Exception as e:
         print("Erro ao inserir item:", e)
+
+def get_all_users():
+    pass
 
 if __name__=="__main__":
     #print(user_config('micaelle'))

@@ -8,7 +8,7 @@ import uvicorn
 
 from src.agent import AgentJira
 from src.getSession import get_all_keys
-from user_util import val_user_session
+from src.user_util import val_user_session, get_user_data
 
 
 description = """
@@ -36,7 +36,7 @@ class Payload(BaseModel):
     user_name: str = Field(default=None,title="user name")
     password: str =Field(default=None,title="password")
 
-@app.post("user/{user}/session/{chat_session}")
+@app.post("user/{user}/session/{chat_session}",tags=["Session"])
 async def chat(userId:str,chat_session: str, prompt: Annotated[Payload, Body(embed=True)]):
     if val_user_session(userId,chat_session):
         chat = AgentJira(sessionId=chat_session, url=prompt.jira_url, user_name=prompt.user_name, password=prompt.password)
@@ -49,24 +49,33 @@ async def chat(userId:str,chat_session: str, prompt: Annotated[Payload, Body(emb
        return {"status":"error","message":"User dont't have this session"}    
    
 
-@app.get('user/{user}/session/{chat_session}/history')
-def chat_history(chat_session:str):
-   history = AgentJira(sessionId=chat_session).message_history.messages
-   return {'chat_session':chat_session,"history":history}
+@app.get('user/{user}/session/{chat_session}/history',tags=["Session"])
+def chat_history(user:str,chat_session:str):
+   if val_user_session(user,chat_session):
+      history = AgentJira(sessionId=chat_session).message_history.messages
+      return {'chat_session':chat_session,"history":history}
+   else:
+      return {"status":"error","message":"User dont't have this session"}   
 
-@app.get('/session/list')
+@app.get('/session/list',tags=["Session"])
 def chat_list():
    list = get_all_keys()
    return {'Session_ids':list}
 
+@app.get('/user/{user}/session/list',tags=["Session"])
+def user_session_list(user:str):
+   """Get user sessions"""
+   data = get_user_data(user)
+   return {'user':user,"Session":data["Sessions"]}
 
-@app.get('/user/list')
+@app.get('/user/{user}/',tags=["User"])
+def user_session_list(user:str):
+   """Get user data"""
+   data = get_user_data(user)
+   return {'user':user,"data":data}
+
+@app.get('/user/list',tags=["User"])
 def user_list():
-   list = get_all_keys()
-   return {'Session_ids':list}
-
-@app.get('/user/session/list')
-def user_session_list():
    list = get_all_keys()
    return {'Session_ids':list}
 
