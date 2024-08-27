@@ -13,8 +13,28 @@ def val_user_session(userId,session):
     else:
         return False
 
-def put_user_session(userId,session):
+def val_user_exist(userId):
+
+    keys=[]
+    response = table.scan()
+    data = response['Items']
+
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        data.extend(response['Items'])
+        
+    for item in data:
+        keys.append(item["UserId"]) 
+    
+    
+    if userId in keys:
+        return True
+    else:
+        return False
+
+def put_user_session(userId):
     # Item que será inserido
+    session = str(uuid.uuid4())
     user_data = get_user_data(userId)
     session_list = user_data["Sessions"]
     session_list.append(str(session))
@@ -24,7 +44,7 @@ def put_user_session(userId,session):
         'Nome': user_data["Nome"],     # Outro atributo do item
         'Email': user_data["Email"],
         'Url':user_data["Url"],
-        'password':user_data["Password"],
+        'password':user_data["password"],
         'Sessions':session_list
     }
 
@@ -33,7 +53,7 @@ def put_user_session(userId,session):
         response = table.put_item(
             Item=item
         )
-        return item
+        return session
     except Exception as e:
         print("Erro ao inserir item:", e)
 
@@ -63,7 +83,26 @@ def user_config(user_name:str,url:str=None,email:str=None,password:str=None):
         print("Erro ao inserir item:", e)
 
 def get_all_users():
-    pass
+    keys=[]
+    response = table.scan()
+    data = response['Items']
+
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        data.extend(response['Items'])
+        
+    for item in data:
+        keys.append({"Userid": item["UserId"], 
+                     "user_data":
+                            {
+                            'Nome': item["Nome"],     # Outro atributo do item
+                            'Email':item["Email"],
+                            'Sessions':item["Sessions"] 
+                            }
+                    }
+        )
+
+    return keys
 
 if __name__=="__main__":
     #print(user_config('micaelle'))
@@ -71,4 +110,6 @@ if __name__=="__main__":
     #print(put_user_session('99903cb0-616d-4278-af7b-f8d58ebcf9a1','4b4'))
     #print("-----------------")
     #print(get_user_data('99903cb0-616d-4278-af7b-f8d58ebcf9a1'))
-    print(val_user_session('99903cb0-616d-4278-af7b-f8d58ebcf9a1','b54'))
+    #print(val_user_session('99903cb0-616d-4278-af7b-f8d58ebcf9a1','b54'))
+    #print(get_all_users())
+    print(val_user_exist('9'))

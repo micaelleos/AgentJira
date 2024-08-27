@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from pydantic import BaseModel, Field
 
 from fastapi import FastAPI, Body
@@ -8,7 +8,7 @@ import uvicorn
 
 from src.agent import AgentJira
 from src.getSession import get_all_keys
-from src.user_util import val_user_session, get_user_data
+from src.user_util import val_user_session, get_user_data, user_config, get_all_users, put_user_session, val_user_exist
 
 
 description = """
@@ -30,26 +30,36 @@ app = FastAPI(title="AgentJira",
 
 handler=Mangum(app)
 
-class Payload(BaseModel):
-    user_message: str = Field(default=None,title="user message")
-    jira_url: str = Field(default=None,title="jira Url")
+class User(BaseModel):
     user_name: str = Field(default=None,title="user name")
+    jira_url: str = Field(default=None,title="jira Url")
+    user_email: str = Field(default=None,title="user email")
     password: str =Field(default=None,title="password")
 
-@app.post("user/{user}/session/{chat_session}",tags=["Session"])
-async def chat(userId:str,chat_session: str, prompt: Annotated[Payload, Body(embed=True)]):
-    if val_user_session(userId,chat_session):
-        chat = AgentJira(sessionId=chat_session, url=prompt.jira_url, user_name=prompt.user_name, password=prompt.password)
-        try:
-            response = chat.chat_agent(query=prompt.user_message)
-            return {"Ai_response": response["output"], "status":"sucsses"}
-        except:
-            return {"Ai_response":"", "ChatId":"","status":"errror"}
-    else:
-       return {"status":"error","message":"User dont't have this session"}    
+class Prompt(BaseModel):
+    user_message: str = Field(default=None,title="user message")
+
+@app.post("/user/{user}/session/",tags=["Session"])
+async def chat(user:str,prompt: Annotated[Prompt, Body(embed=True)],chat_session:str=None):
+   if val_user_exist(user):
+      if not chat_session:
+         chat_session = put_user_session(user)
+      if val_user_session(user,chat_session):
+         data = get_user_data(user)
+         chat = AgentJira(sessionId=chat_session, url=data['Url'], user_name=data['Nome'], password=data['password'])
+         try:
+               response = chat.chat_agent(query=prompt.user_message)
+               return {"Ai_response": response["output"],"SessionId":chat_session, "status":"sucsses"}
+         except:
+               return {"Ai_response":"", "ChatId":"","status":"errror"}
+      else:
+         return {"status":"error","message":"User dont't have this session"}   
+   else:
+      return {"status":"error","message":"User dont't exist"} 
+      
    
 
-@app.get('user/{user}/session/{chat_session}/history',tags=["Session"])
+@app.get('/user/{user}/session/{chat_session}/history',tags=["Session"])
 def chat_history(user:str,chat_session:str):
    if val_user_session(user,chat_session):
       history = AgentJira(sessionId=chat_session).message_history.messages
@@ -57,18 +67,19 @@ def chat_history(user:str,chat_session:str):
    else:
       return {"status":"error","message":"User dont't have this session"}   
 
-@app.get('/session/list',tags=["Session"])
-def chat_list():
-   list = get_all_keys()
-   return {'Session_ids':list}
-
 @app.get('/user/{user}/session/list',tags=["Session"])
 def user_session_list(user:str):
    """Get user sessions"""
    data = get_user_data(user)
    return {'user':user,"Session":data["Sessions"]}
 
-@app.get('/user/{user}/',tags=["User"])
+
+@app.post('/user/config',tags=["User"])
+def create_user(user: Annotated[User, Body(embed=True)]):
+   data = user_config(user.user_name, url=user.jira_url, email=user.user_email, password=user.password)
+   return {'user':user,"data":data}
+
+@app.get('/user/{user}/data',tags=["User"])
 def user_session_list(user:str):
    """Get user data"""
    data = get_user_data(user)
@@ -76,8 +87,8 @@ def user_session_list(user:str):
 
 @app.get('/user/list',tags=["User"])
 def user_list():
-   list = get_all_keys()
-   return {'Session_ids':list}
+   list = get_all_users()
+   return {'UsersId':list}
 
 #@app.delete("/items/{item_id}")
 #def delete_item(item_id: int):
